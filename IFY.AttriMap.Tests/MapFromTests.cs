@@ -1,26 +1,20 @@
 ﻿namespace IFY.AttriMap.Tests;
 
 [TestClass]
-public sealed class MapToTests
+public sealed class MapFromTests
 {
     public class TestSource
     {
-        [MapTo<TestTarget>(nameof(TestTarget.TName))]
         public string SName { get; init; } = string.Empty;
         public string SValue { get; init; } = string.Empty;
-        [MapTo(typeof(TestTarget), nameof(TestTarget.TDateOfBirth), nameof(StringToDateOnly))]
         public string SDateOfBirth { get; init; } = string.Empty;
-        public static DateOnly StringToDateOnly(string input) => DateOnly.Parse(input); // Example transformer method
     }
 
     public interface ITestSource
     {
-        [MapTo<TestTarget>(nameof(TestTarget.TName))]
         string SName { get; }
         string SValue { get; }
-        [MapTo(typeof(TestTarget), nameof(TestTarget.TDateOfBirth), nameof(StringToDateOnly))]
         string SDateOfBirth { get; }
-        public DateOnly StringToDateOnly(string input) => DateOnly.Parse(input); // Example transformer method
     }
     public class TestSourceImpl : ITestSource
     {
@@ -31,13 +25,18 @@ public sealed class MapToTests
 
     public class TestTarget
     {
+        [MapFrom<TestSource>(nameof(TestSource.SName))]
+        [MapFrom<ITestSource>(nameof(ITestSource.SName))]
         public string TName { get; init; } = string.Empty;
         public string TValue { get; init; } = string.Empty;
+        [MapFrom(typeof(TestSource), nameof(TestSource.SDateOfBirth), nameof(StringToDateOnly))]
+        [MapFrom(typeof(ITestSource), nameof(ITestSource.SDateOfBirth), nameof(StringToDateOnly))]
         public DateOnly TDateOfBirth { get; init; }
+        public static DateOnly StringToDateOnly(string input) => DateOnly.Parse(input); // Example transformer method
     }
 
     [TestMethod]
-    public void Source_maps_to_target()
+    public void Target_maps_from_source()
     {
         // Arrange
         var source = new TestSource
@@ -58,7 +57,7 @@ public sealed class MapToTests
     }
 
     [TestMethod]
-    public void Source_interface_maps_to_target()
+    public void Target_maps_from_source_interface()
     {
         // Arrange
         var source = new TestSourceImpl

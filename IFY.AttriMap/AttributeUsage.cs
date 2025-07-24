@@ -25,11 +25,9 @@ readonly struct AttributeUsage
     public string TargetTypeName { get; }
     public string TargetPropertyName { get; }
 
-    public string? TransformerMethodName { get; }
-    public bool TransformerMethodExists { get; }
-    public bool TransformerMethodIsStatic { get; }
+    public string? TransformerMethodFullName { get; }
 
-    public AttributeUsage(INamedTypeSymbol sourceTypeSymbol, string sourcePropertyName, INamedTypeSymbol targetTypeSymbol, string targetPropertyName, string? transformerMethodName)
+    public AttributeUsage(INamedTypeSymbol sourceTypeSymbol, string sourcePropertyName, INamedTypeSymbol targetTypeSymbol, string targetPropertyName, bool tranformerOnTarget, string? transformerMethodName)
     {
         SourceTypeNamespace = sourceTypeSymbol.ContainingNamespace.ToDisplayString();
         SourceTypeFullName = sourceTypeSymbol.ToDisplayString();
@@ -41,17 +39,50 @@ readonly struct AttributeUsage
 
         MapperHash = Hash(SourceTypeFullName + "__" + TargetTypeFullName);
 
-        TransformerMethodName = transformerMethodName;
         if (transformerMethodName is not null)
         {
-            var transformerMethod = sourceTypeSymbol
+            var transformerMethod = (tranformerOnTarget ? targetTypeSymbol : sourceTypeSymbol)
                 .GetMembers(transformerMethodName)
                 .OfType<IMethodSymbol>()
                 .Where(m => m.Parameters.Length == 1) // TODO: and arg type
                 .SingleOrDefault();
             // TODO: check result type?
-            TransformerMethodExists = transformerMethod is not null;
-            TransformerMethodIsStatic = transformerMethod?.IsStatic == true;
+            if (transformerMethod is not null)
+            {
+                TransformerMethodFullName = transformerMethod.IsStatic
+                    ? $"{transformerMethod.ContainingType.ToDisplayString()}.{transformerMethodName}"
+                    : $"source.{transformerMethodName}";
+            }
         }
+    }
+
+    public static AttributeUsage To(IPropertySymbol propertySymbol, AttributeData attr)
+    {
+        var targetTypeArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value as INamedTypeSymbol
+            ?? throw new ArgumentException("Argument 1 must be a type", "targetType"); // TODO: build error
+        var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString()
+            ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+        var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(2).Value?.ToString();
+
+        return new AttributeUsage(propertySymbol.ContainingType,
+            propertySymbol.Name,
+            targetTypeArg,
+            targetPropArg,
+            false, transformerMethodArg);
+    }
+
+    public static AttributeUsage From(IPropertySymbol propertySymbol, AttributeData attr)
+    {
+        var sourceTypeArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value as INamedTypeSymbol
+            ?? throw new ArgumentException("Argument 1 must be a type", "targetType"); // TODO: build error
+        var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString()
+            ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+        var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(2).Value?.ToString();
+
+        return new AttributeUsage(sourceTypeArg,
+            sourcePropArg,
+            propertySymbol.ContainingType,
+            propertySymbol.Name,
+            true, transformerMethodArg);
     }
 }
