@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>IFY.AttriMap</name>
+    </assembly>
+    <members>
+        <member name="T:IFY.AttriMap.AttributeUsage">
+            <summary>
+            Represents a usage of the MapTo attribute, containing information about the source and target types and properties,
+            </summary>
+        </member>
+    </members>
+</doc>
