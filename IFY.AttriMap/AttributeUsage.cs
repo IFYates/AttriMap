@@ -9,12 +9,6 @@ namespace IFY.AttriMap;
 /// </summary>
 readonly struct AttributeUsage
 {
-    static string Hash(string input)
-    {
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-        return new string([.. hash.Select(b => (char)('A' + (b % 26)))]);
-    }
     public string MapperHash { get; }
 
     public string SourceTypeNamespace { get; }
@@ -37,7 +31,10 @@ readonly struct AttributeUsage
         TargetTypeName = targetTypeSymbol.Name;
         TargetPropertyName = targetPropertyName;
 
-        MapperHash = Hash(SourceTypeFullName + "__" + TargetTypeFullName);
+        // Hash the type names to create a unique identifier for the mapper
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes($"{SourceTypeFullName}__{TargetTypeFullName}"));
+        MapperHash = new string([.. hash.Select(b => (char)('A' + (b % 26)))]);
 
         if (transformerMethodName is not null)
         {
