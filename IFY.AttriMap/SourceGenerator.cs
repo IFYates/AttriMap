@@ -8,7 +8,10 @@ namespace IFY.AttriMap;
 [Generator]
 internal class SourceGenerator : IIncrementalGenerator
 {
-    private static readonly string AttributeFullName = typeof(MapToAttribute).FullName;
+    private static readonly string MapToAttributeFullName = typeof(MapToAttribute).FullName;
+    private static readonly string MapToAttributeGenericFullName = typeof(MapToAttribute).FullName + "<TTarget>";
+    private static readonly string MapFromAttributeFullName = typeof(MapFromAttribute).FullName;
+    private static readonly string MapFromAttributeGenericFullName = typeof(MapFromAttribute).FullName + "<TSource>";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -35,34 +38,42 @@ internal class SourceGenerator : IIncrementalGenerator
                     foreach (var attr in propertySymbol.GetAttributes())
                     {
                         if (attr.AttributeClass?.IsGenericType == true
-                            && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == AttributeFullName + "<TTarget>")
+                            && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapToAttributeGenericFullName)
                         {
-                            var typeTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
+                            var targetTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
                             var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString()
                                 ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
                             var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
 
                             var use = new AttributeUsage(propertySymbol.ContainingType,
                                 propertySymbol.Name,
-                                typeTypeArg,
+                                targetTypeArg,
                                 targetPropArg,
-                                transformerMethodArg);
-                            usages.Add(use);
+                                false, transformerMethodArg);
+                            usages.Add(use); // TODO: static
                         }
-                        else if (attr.AttributeClass?.ToDisplayString() == AttributeFullName)
+                        else if (attr.AttributeClass?.ToDisplayString() == MapToAttributeFullName)
                         {
-                            var typeTypeArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value as INamedTypeSymbol
-                                ?? throw new ArgumentException("Argument 1 must be a type", "targetType"); // TODO: build error
-                            var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString()
+                            usages.Add(AttributeUsage.To(propertySymbol, attr));
+                        }
+                        else if (attr.AttributeClass?.IsGenericType == true
+                            && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapFromAttributeGenericFullName)
+                        {
+                            var sourceTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
+                            var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString()
                                 ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
-                            var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(2).Value?.ToString();
+                            var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
 
-                            var use = new AttributeUsage(propertySymbol.ContainingType,
+                            var use = new AttributeUsage(sourceTypeArg,
+                                sourcePropArg,
+                                propertySymbol.ContainingType,
                                 propertySymbol.Name,
-                                typeTypeArg,
-                                targetPropArg,
-                                transformerMethodArg);
-                            usages.Add(use);
+                                true, transformerMethodArg);
+                            usages.Add(use); // TODO: static
+                        }
+                        else if (attr.AttributeClass?.ToDisplayString() == MapFromAttributeFullName)
+                        {
+                            usages.Add(AttributeUsage.From(propertySymbol, attr));
                         }
                     }
                 }
@@ -92,10 +103,9 @@ internal class SourceGenerator : IIncrementalGenerator
                 {
                     sb.Append("                ")
                         .Append($"{prop.TargetPropertyName} = ");
-                    if (prop.TransformerMethodExists)
+                    if (prop.TransformerMethodFullName is not null)
                     {
-                        sb.Append(prop.TransformerMethodIsStatic ? def.SourceTypeFullName : "source")
-                            .AppendLine($".{prop.TransformerMethodName}(source.{prop.SourcePropertyName}),");
+                        sb.AppendLine($"{prop.TransformerMethodFullName}(source.{prop.SourcePropertyName}),");
                     }
                     else
                     {
