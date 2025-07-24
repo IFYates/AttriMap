@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<LangVersion>latest</LangVersion>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+		<!--<GeneratePackageOnBuild>true</GeneratePackageOnBuild>-->
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<ProjectDir>$(MSBuildProjectDirectory)</ProjectDir>
+
+		<Authors>IFYates</Authors>
+		<PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+		<Version>0.0.1-beta</Version>
+		<PackageProjectUrl>https://github.com/IFYates/ManualMapper</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/IFYates/ManualMapper</RepositoryUrl>
+		<RepositoryType>GitHub</RepositoryType>
+		<Copyright>(c) IFYates</Copyright>
+		<Description>Utility for generating source-&gt;target maps methods.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<DocumentationFile>IFY.AttriMap.xml</DocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="bin\**" />
+	  <EmbeddedResource Remove="bin\**" />
+	  <None Remove="bin\**" />
+	  <None Remove="IFY.AttriMap.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.13.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\README.md" Link="README.md">
+			<PackagePath>\</PackagePath>
+			<Pack>true</Pack>
+		</None>
+	</ItemGroup>
+
+</Project>

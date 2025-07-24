@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36105.17
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IFY.AttriMap", "IFY.AttriMap\IFY.AttriMap.csproj", "{D5F9A69A-8B41-4844-A10B-8F5F3B0D9850}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IFY.AttriMap.Tests", "IFY.AttriMap.Tests\IFY.AttriMap.Tests.csproj", "{888D5FD5-CC27-4D78-B6C1-30380750CE13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D5F9A69A-8B41-4844-A10B-8F5F3B0D9850}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5F9A69A-8B41-4844-A10B-8F5F3B0D9850}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5F9A69A-8B41-4844-A10B-8F5F3B0D9850}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5F9A69A-8B41-4844-A10B-8F5F3B0D9850}.Release|Any CPU.Build.0 = Release|Any CPU
+		{888D5FD5-CC27-4D78-B6C1-30380750CE13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{888D5FD5-CC27-4D78-B6C1-30380750CE13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{888D5FD5-CC27-4D78-B6C1-30380750CE13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{888D5FD5-CC27-4D78-B6C1-30380750CE13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A0E2CCC0-E059-4084-B26A-BFB76C3B016A}
+	EndGlobalSection
+EndGlobal
