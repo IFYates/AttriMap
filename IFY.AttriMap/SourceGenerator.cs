@@ -41,8 +41,7 @@ internal class SourceGenerator : IIncrementalGenerator
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapToAttributeGenericFullName)
                         {
                             var targetTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
-                            var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString()
-                                ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+                            var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString();
                             var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
 
                             var use = new AttributeUsage(propertySymbol.ContainingType,
@@ -60,12 +59,11 @@ internal class SourceGenerator : IIncrementalGenerator
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapFromAttributeGenericFullName)
                         {
                             var sourceTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
-                            var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString()
-                                ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+                            var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString();
                             var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
 
                             var use = new AttributeUsage(sourceTypeArg,
-                                sourcePropArg,
+                                sourcePropArg ?? propertySymbol.Name,
                                 propertySymbol.ContainingType,
                                 propertySymbol.Name,
                                 true, transformerMethodArg);

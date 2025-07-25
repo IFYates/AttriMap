@@ -8,6 +8,7 @@ public sealed class MapFromTests
         public string SName { get; init; } = string.Empty;
         public string SValue { get; init; } = string.Empty;
         public string SDateOfBirth { get; init; } = string.Empty;
+        public int Count { get; init; }
     }
 
     public interface ITestSource
@@ -15,12 +16,14 @@ public sealed class MapFromTests
         string SName { get; }
         string SValue { get; }
         string SDateOfBirth { get; }
+        int Count { get; }
     }
     public class TestSourceImpl : ITestSource
     {
         public string SName { get; init; } = string.Empty;
         public string SValue { get; init; } = string.Empty;
         public string SDateOfBirth { get; init; } = string.Empty;
+        public int Count { get; init; }
     }
 
     public class TestTarget
@@ -33,7 +36,12 @@ public sealed class MapFromTests
         [MapFrom(typeof(ITestSource), nameof(ITestSource.SDateOfBirth), nameof(StringToDateOnly))]
         public DateOnly TDateOfBirth { get; init; }
         public static DateOnly StringToDateOnly(string input) => DateOnly.Parse(input); // Example transformer method
+        [MapFrom<TestSource>]
+        [MapFrom<ITestSource>]
+        public int Count { get; init; }
     }
+
+    // TODO: Map to interface
 
     [TestMethod]
     public void Target_maps_from_source()
@@ -44,6 +52,7 @@ public sealed class MapFromTests
             SName = "Test Name",
             SValue = "Test Value",
             SDateOfBirth = "2001-02-03",
+            Count = 10
         };
 
         // Act
@@ -54,6 +63,7 @@ public sealed class MapFromTests
         Assert.AreEqual("Test Name", target.TName);
         Assert.AreEqual("", target.TValue);
         Assert.AreEqual("2001-02-03", target.TDateOfBirth.ToString("yyyy-MM-dd"));
+        Assert.AreEqual(10, target.Count);
     }
 
     [TestMethod]
@@ -65,6 +75,7 @@ public sealed class MapFromTests
             SName = "Test Name",
             SValue = "Test Value",
             SDateOfBirth = "2001-02-03",
+            Count = 10
         };
 
         // Act
@@ -75,5 +86,6 @@ public sealed class MapFromTests
         Assert.AreEqual("Test Name", target.TName);
         Assert.AreEqual("", target.TValue);
         Assert.AreEqual("2001-02-03", target.TDateOfBirth.ToString("yyyy-MM-dd"));
+        Assert.AreEqual(10, target.Count);
     }
 }

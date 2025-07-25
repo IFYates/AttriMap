@@ -11,6 +11,7 @@ class Source
 {
     [MapTo(typeof(Target), nameof(Target.Name))]
     // C# 12+: [MapTo<Target>(nameof(Target.Name))]
+    // [MapTo(typeof(Target))] // Property name matches target property name
     public string Name { get; set; }
 }
 
@@ -31,7 +32,6 @@ Console.WriteLine(target.Name); // Output: Test
 interface ISource
 {
     [MapTo(typeof(Target), nameof(Target.Name))]
-    // C# 12+: [MapTo<Target>(nameof(Target.Name))]
     string Name { get; }
 }
 class Source : ISource
@@ -109,7 +109,6 @@ class Source : ISource
 class Target
 {
     [MapFrom(typeof(ISource), nameof(Source.Name))]
-    // C# 12+: [MapFrom<ISource>(nameof(Source.Name))]
     public string Name { get; set; }
 }
 ```

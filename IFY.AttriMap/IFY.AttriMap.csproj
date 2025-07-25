@@ -18,7 +18,7 @@
 
 		<Authors>IFYates</Authors>
 		<PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
-		<Version>0.0.1-beta</Version>
+		<Version>0.0.2-beta</Version>
 		<PackageProjectUrl>https://github.com/IFYates/ManualMapper</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/IFYates/ManualMapper</RepositoryUrl>
 		<RepositoryType>GitHub</RepositoryType>

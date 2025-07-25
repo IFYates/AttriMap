@@ -21,7 +21,7 @@ readonly struct AttributeUsage
 
     public string? TransformerMethodFullName { get; }
 
-    public AttributeUsage(INamedTypeSymbol sourceTypeSymbol, string sourcePropertyName, INamedTypeSymbol targetTypeSymbol, string targetPropertyName, bool tranformerOnTarget, string? transformerMethodName)
+    public AttributeUsage(INamedTypeSymbol sourceTypeSymbol, string sourcePropertyName, INamedTypeSymbol targetTypeSymbol, string? targetPropertyName, bool tranformerOnTarget, string? transformerMethodName)
     {
         SourceTypeNamespace = sourceTypeSymbol.ContainingNamespace.ToDisplayString();
         SourceTypeFullName = sourceTypeSymbol.ToDisplayString();
@@ -29,7 +29,9 @@ readonly struct AttributeUsage
 
         TargetTypeFullName = targetTypeSymbol.ToDisplayString();
         TargetTypeName = targetTypeSymbol.Name;
-        TargetPropertyName = targetPropertyName;
+        TargetPropertyName = targetPropertyName ?? sourcePropertyName;
+
+        // TODO: Check target property exists
 
         // Hash the type names to create a unique identifier for the mapper
         using var sha256 = SHA256.Create();
@@ -38,18 +40,26 @@ readonly struct AttributeUsage
 
         if (transformerMethodName is not null)
         {
-            var transformerMethod = (tranformerOnTarget ? targetTypeSymbol : sourceTypeSymbol)
-                .GetMembers(transformerMethodName)
+            var transformerParent = tranformerOnTarget ? targetTypeSymbol : sourceTypeSymbol;
+            var transformerMethod = transformerParent.GetMembers(transformerMethodName)
                 .OfType<IMethodSymbol>()
                 .Where(m => m.Parameters.Length == 1) // TODO: and arg type
                 .SingleOrDefault();
-            // TODO: check result type?
+            // TODO: Check result type against target property
             if (transformerMethod is not null)
             {
-                TransformerMethodFullName = transformerMethod.IsStatic
-                    ? $"{transformerMethod.ContainingType.ToDisplayString()}.{transformerMethodName}"
+                TransformerMethodFullName = tranformerOnTarget || transformerMethod.IsStatic
+                    ? $"{transformerParent.ToDisplayString()}.{transformerMethodName}"
                     : $"source.{transformerMethodName}";
             }
+            else
+            {
+                // TODO: Missing transformer method
+            }
+        }
+        else
+        {
+            // TODO: Check target property type
         }
     }
 
@@ -57,8 +67,7 @@ readonly struct AttributeUsage
     {
         var targetTypeArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value as INamedTypeSymbol
             ?? throw new ArgumentException("Argument 1 must be a type", "targetType"); // TODO: build error
-        var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString()
-            ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+        var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
         var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(2).Value?.ToString();
 
         return new AttributeUsage(propertySymbol.ContainingType,
@@ -72,12 +81,11 @@ readonly struct AttributeUsage
     {
         var sourceTypeArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value as INamedTypeSymbol
             ?? throw new ArgumentException("Argument 1 must be a type", "targetType"); // TODO: build error
-        var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString()
-            ?? throw new ArgumentException("Argument 2 must be a string", "targetProperty"); // TODO: build error
+        var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
         var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(2).Value?.ToString();
 
         return new AttributeUsage(sourceTypeArg,
-            sourcePropArg,
+            sourcePropArg ?? propertySymbol.Name,
             propertySymbol.ContainingType,
             propertySymbol.Name,
             true, transformerMethodArg);

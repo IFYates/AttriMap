@@ -3,12 +3,12 @@
 namespace IFY.AttriMap;
 
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
-public sealed class MapToAttribute<TTarget>(string targetProperty, string? transformerMethod = null) : Attribute
+public sealed class MapToAttribute<TTarget>(string? targetProperty = null, string? transformerMethod = null) : Attribute
     where TTarget : new()
 {
 }
 
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
-public sealed class MapToAttribute(Type targetType, string targetProperty, string? transformerMethod = null) : Attribute
+public sealed class MapToAttribute(Type targetType, string? targetProperty, string? transformerMethod = null) : Attribute
 {
 }
