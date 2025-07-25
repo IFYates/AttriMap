@@ -19,5 +19,10 @@
             Hash of the type names to create a unique identifier for the mapper.
             </summary>
         </member>
+        <member name="T:IFY.AttriMap.CodeErrorReporter">
+            <summary>
+            Handles raising build errors.
+            </summary>
+        </member>
     </members>
 </doc>

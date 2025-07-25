@@ -9,9 +9,9 @@ namespace IFY.AttriMap;
 internal class SourceGenerator : IIncrementalGenerator
 {
     private static readonly string MapToAttributeFullName = typeof(MapToAttribute).FullName;
-    private static readonly string MapToAttributeGenericFullName = typeof(MapToAttribute).FullName + "<TTarget>";
+    private static readonly string MapToAttributeGenericFullName = $"{typeof(MapToAttribute).FullName}<TTarget>";
     private static readonly string MapFromAttributeFullName = typeof(MapFromAttribute).FullName;
-    private static readonly string MapFromAttributeGenericFullName = typeof(MapFromAttribute).FullName + "<TSource>";
+    private static readonly string MapFromAttributeGenericFullName = $"{typeof(MapFromAttribute).FullName}<TSource>";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -23,7 +23,7 @@ internal class SourceGenerator : IIncrementalGenerator
             .Where(static m => m is not null)!;
         var compilationAndProperties = context.CompilationProvider.Combine(propertyDeclarations.Collect());
 
-        context.RegisterSourceOutput(compilationAndProperties, (spc, source) =>
+        context.RegisterSourceOutput(compilationAndProperties, (context, source) =>
         {
             var (compilation, properties) = source;
 
@@ -31,35 +31,44 @@ internal class SourceGenerator : IIncrementalGenerator
             var usages = new List<AttributeUsage>();
             foreach (var prop in properties)
             {
-                // TODO: Warn on duplicate mapping
                 var model = compilation.GetSemanticModel(prop!.SyntaxTree);
                 var symbol = model.GetDeclaredSymbol(prop);
                 if (symbol is IPropertySymbol propertySymbol)
                 {
                     foreach (var attr in propertySymbol.GetAttributes())
                     {
+                        AttributeUsage? newUsage = null;
                         if ((attr.AttributeClass?.IsGenericType == true
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapToAttributeGenericFullName)
                             || attr.AttributeClass?.ToDisplayString() == MapToAttributeFullName)
                         {
-                            usages.Add(AttributeUsage.To(propertySymbol, attr));
+                            newUsage = AttributeUsage.To(propertySymbol, attr);
                         }
                         else if ((attr.AttributeClass?.IsGenericType == true
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapFromAttributeGenericFullName)
                             || attr.AttributeClass?.ToDisplayString() == MapFromAttributeFullName)
                         {
-                            usages.Add(AttributeUsage.From(propertySymbol, attr));
+                            newUsage = AttributeUsage.From(propertySymbol, attr);
+                        }
+
+                        if (newUsage is not null)
+                        {
+                            usages.Add(newUsage.Value);
+
+                            // TODO: Warn on duplicate mapping
+                            //context.ReportDuplicatePropertyMapping(propertySymbol, newUsage.Value);
                         }
                     }
                 }
             }
 
+            // Generate the AttriMap extension methods
             var sb = new StringBuilder();
-            sb.AppendLine("// Auto-generated AttriMap");
-            sb.AppendLine("// " + DateTime.UtcNow.ToString("O"));
+            sb.AppendLine("// Auto-generated AttriMap extension methods");
+            sb.AppendLine($"// {DateTime.UtcNow:O}");
 
             var groupedMaps = usages.GroupBy(u => u.MapperHash).ToArray();
-            sb.AppendLine("// Found " + groupedMaps.Length + " uses of MapTo/MapFrom");
+            sb.AppendLine($"// Found {groupedMaps.Length} uses of MapTo/MapFrom");
 
             foreach (var map in groupedMaps)
             {
@@ -93,7 +102,7 @@ internal class SourceGenerator : IIncrementalGenerator
                 sb.AppendLine("}");
             }
 
-            spc.AddSource("AttriMap.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+            context.AddSource("AttriMap.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
         });
 
     }
