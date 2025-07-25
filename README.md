@@ -1,136 +1,82 @@
-﻿# Source to target
-For when the source type can reference the target type.
+﻿# AttriMap
+A simple attribute-based mapping library for C# that allows you to map properties between types.
+
+## Features
+- Attribute-based mapping; defined on the types themselves
+- Source-generated extension methods for best performance
+- Mapping from source to target and vice versa, or through interfaces
+- Transforming values during mapping
+
+## Full MapTo Example
 ```csharp
 using IFY.AttriMap;
 
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
+var source = new MySourceType
+{
+    Name = "Test",
+    SourceValue = "Example",
+    Date = "2025-07-24"
+};
+var target = source.ToMyTargetType(); // Generated extension method named after the target type
+
 Console.WriteLine(target.Name); // Output: Test
+Console.WriteLine(target.TargetValue); // Output: Example
+Console.WriteLine(target.Date.ToString("yyyy-MM-dd")); // Output: 2025-07-24
 
-class Source
+class MySourceType
 {
-    [MapTo(typeof(Target), nameof(Target.Name))]
-    // C# 12+: [MapTo<Target>(nameof(Target.Name))]
-    // [MapTo(typeof(Target))] // Property name matches target property name
+    [MapTo<MyTargetType>] // Direct mapping (C# 12+ syntax)
     public string Name { get; set; }
+
+    [MapTo(typeof(MyTargetType), nameof(MyTargetType.TargetValue))] // Mapping to a different property name
+    public string SourceValue { get; set; }
+
+    [MapTo(typeof(MyTargetType), transformerMethod: nameof(ParseDateTime))] // Transforming value during mapping
+    public string Date { get; set; }
+    public static DateTime ParseDateTime(string value) => DateTime.Parse(value);
 }
 
-class Target
+class MyTargetType
 {
-    public string Name { get; set; }
+    public string Name { get; init; }
+    public string TargetValue { get; init; }
+    public DateTime Date { get; init; }
 }
 ```
 
-Through interface
+## Full MapFrom Example
 ```csharp
 using IFY.AttriMap;
 
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
+var source = new MySourceType
+{
+    Name = "Test",
+    SourceValue = "Example",
+    Date = "2025-07-24"
+};
+var target = source.ToMyTargetType(); // Generated extension method named after the target type
+
 Console.WriteLine(target.Name); // Output: Test
+Console.WriteLine(target.TargetValue); // Output: Example
+Console.WriteLine(target.Date.ToString("yyyy-MM-dd")); // Output: 2025-07-24
 
-interface ISource
+class MySourceType
 {
-    [MapTo(typeof(Target), nameof(Target.Name))]
-    string Name { get; }
+    public string Name { get; init; }
+    public string SourceValue { get; init; }
+    public string Date { get; init; }
 }
-class Source : ISource
+
+class MyTargetType
 {
+    [MapFrom<MySourceType>] // Direct mapping (C# 12+ syntax)
     public string Name { get; set; }
-}
 
-class Target
-{
-    public string Name { get; set; }
-}
-```
+    [MapFrom(typeof(MySourceType), nameof(MySourceType.SourceValue))] // Mapping to a different property name
+    public string TargetValue { get; set; }
 
-Transform value
-```csharp
-using IFY.AttriMap;
-
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
-Console.WriteLine(target.Name); // Output: TEST
-
-class Source
-{
-    [MapTo(typeof(Target), nameof(Target.Name), nameof(ToUpper))]
-    // C# 12+: [MapTo<Target>(nameof(Target.Name), nameof(ToUpper))]
-    public string Name { get; set; }
-    public static string ToUpper(string value) => value.ToUpperInvariant();
-}
-
-class Target
-{
-    public string Name { get; set; }
-}
-```
-
-# Target to source
-For when the target type can reference the source type.
-```csharp
-using IFY.AttriMap;
-
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
-Console.WriteLine(target.Name); // Output: Test
-
-class Source
-{
-    public string Name { get; set; }
-}
-
-class Target
-{
-    [MapFrom(typeof(Source), nameof(Source.Name))]
-    // C# 12+: [MapFrom<Source>(nameof(Source.Name))]
-    public string Name { get; set; }
-}
-```
-
-Through interface
-```csharp
-using IFY.AttriMap;
-
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
-Console.WriteLine(target.Name); // Output: Test
-
-interface ISource
-{
-    string Name { get; }
-}
-class Source : ISource
-{
-    public string Name { get; set; }
-}
-
-class Target
-{
-    [MapFrom(typeof(ISource), nameof(Source.Name))]
-    public string Name { get; set; }
-}
-```
-
-Transform value
-```csharp
-using IFY.AttriMap;
-
-var source = new Source { Name = "Test" };
-var target = source.ToTarget();
-Console.WriteLine(target.Name); // Output: TEST
-
-class Source
-{
-    public string Name { get; set; }
-}
-
-class Target
-{
-    [MapFrom(typeof(Source), nameof(Source.Name), nameof(ToUpper))]
-    // C# 12+: [MapFrom<Source>(nameof(Source.Name), nameof(ToUpper))]
-    public string Name { get; set; }
-    public static string ToUpper(string value) => value.ToUpperInvariant();
+    [MapFrom(typeof(MySourceType), transformerMethod: nameof(ParseDateTime))] // Transforming value during mapping
+    public DateTime Date { get; set; }
+    public static DateTime ParseDateTime(string value) => DateTime.Parse(value);
 }
 ```

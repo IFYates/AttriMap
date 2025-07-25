@@ -31,45 +31,22 @@ internal class SourceGenerator : IIncrementalGenerator
             var usages = new List<AttributeUsage>();
             foreach (var prop in properties)
             {
+                // TODO: Warn on duplicate mapping
                 var model = compilation.GetSemanticModel(prop!.SyntaxTree);
                 var symbol = model.GetDeclaredSymbol(prop);
                 if (symbol is IPropertySymbol propertySymbol)
                 {
                     foreach (var attr in propertySymbol.GetAttributes())
                     {
-                        if (attr.AttributeClass?.IsGenericType == true
+                        if ((attr.AttributeClass?.IsGenericType == true
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapToAttributeGenericFullName)
-                        {
-                            var targetTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
-                            var targetPropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString();
-                            var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
-
-                            var use = new AttributeUsage(propertySymbol.ContainingType,
-                                propertySymbol.Name,
-                                targetTypeArg,
-                                targetPropArg,
-                                false, transformerMethodArg);
-                            usages.Add(use); // TODO: static
-                        }
-                        else if (attr.AttributeClass?.ToDisplayString() == MapToAttributeFullName)
+                            || attr.AttributeClass?.ToDisplayString() == MapToAttributeFullName)
                         {
                             usages.Add(AttributeUsage.To(propertySymbol, attr));
                         }
-                        else if (attr.AttributeClass?.IsGenericType == true
+                        else if ((attr.AttributeClass?.IsGenericType == true
                             && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapFromAttributeGenericFullName)
-                        {
-                            var sourceTypeArg = (INamedTypeSymbol)attr.AttributeClass.TypeArguments[0];
-                            var sourcePropArg = attr.ConstructorArguments.ElementAtOrDefault(0).Value?.ToString();
-                            var transformerMethodArg = attr.ConstructorArguments.ElementAtOrDefault(1).Value?.ToString();
-
-                            var use = new AttributeUsage(sourceTypeArg,
-                                sourcePropArg ?? propertySymbol.Name,
-                                propertySymbol.ContainingType,
-                                propertySymbol.Name,
-                                true, transformerMethodArg);
-                            usages.Add(use); // TODO: static
-                        }
-                        else if (attr.AttributeClass?.ToDisplayString() == MapFromAttributeFullName)
+                            || attr.AttributeClass?.ToDisplayString() == MapFromAttributeFullName)
                         {
                             usages.Add(AttributeUsage.From(propertySymbol, attr));
                         }
@@ -91,7 +68,7 @@ internal class SourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"namespace {def.SourceTypeNamespace}");
                 sb.AppendLine("{");
                 sb.AppendLine($"    // {def.SourceTypeFullName} -> {def.TargetTypeFullName}");
-                sb.AppendLine($"    internal static class AttriMap__{def.MapperHash}");
+                sb.AppendLine($"    public static class AttriMap__{def.MapperHash}");
                 sb.AppendLine("    {");
                 sb.AppendLine($"        public static {def.TargetTypeFullName} To{def.TargetTypeName}(this {def.SourceTypeFullName} source)");
                 sb.AppendLine("            => new()");

@@ -9,5 +9,15 @@
             Represents a usage of the MapTo attribute, containing information about the source and target types and properties,
             </summary>
         </member>
+        <member name="M:IFY.AttriMap.AttributeUsage.#ctor(Microsoft.CodeAnalysis.INamedTypeSymbol,System.String,Microsoft.CodeAnalysis.INamedTypeSymbol,System.String,System.String)">
+            <summary>
+            Represents a usage of the MapTo attribute, containing information about the source and target types and properties,
+            </summary>
+        </member>
+        <member name="P:IFY.AttriMap.AttributeUsage.MapperHash">
+            <summary>
+            Hash of the type names to create a unique identifier for the mapper.
+            </summary>
+        </member>
     </members>
 </doc>
