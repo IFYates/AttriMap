@@ -8,59 +8,58 @@ namespace IFY.AttriMap;
 [Generator]
 internal class SourceGenerator : IIncrementalGenerator
 {
-    private static readonly string MapToAttributeFullName = typeof(MapToAttribute).FullName;
-    private static readonly string MapToAttributeGenericFullName = $"{typeof(MapToAttribute).FullName}<TTarget>";
-    private static readonly string MapFromAttributeFullName = typeof(MapFromAttribute).FullName;
-    private static readonly string MapFromAttributeGenericFullName = $"{typeof(MapFromAttribute).FullName}<TSource>";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Register a syntax provider to find property declarations with attributes
+        // Register a syntax provider to find property declarations with MapTo/MapFrom attributes
         var propertyDeclarations = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => s is PropertyDeclarationSyntax p && p.AttributeLists.Count > 0,
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
-            .Where(static m => m is not null)!;
+            .CreateSyntaxProvider(selectProperties, resolvePropertyMaps);
         var compilationAndProperties = context.CompilationProvider.Combine(propertyDeclarations.Collect());
+
+        // Find all properties with probable MapTo/MapFrom attributes
+        static bool selectProperties(SyntaxNode node, CancellationToken token)
+        {
+            return node is PropertyDeclarationSyntax propertyNode
+                && propertyNode.AttributeLists.Any(l => l.Attributes.Any(a => isProbablyAttribute(a.Name.ToString())));
+            static bool isProbablyAttribute(string name)
+                => MapFromAttribute.IsPossibleMatch(name) || MapToAttribute.IsPossibleMatch(name);
+        }
+
+        // Find all usages of the MapTo attributes on filtered properties
+        static AttributeUsage[] resolvePropertyMaps(GeneratorSyntaxContext context, CancellationToken token)
+        {
+            var property = (PropertyDeclarationSyntax)context.Node;
+            var propertySymbol = (IPropertySymbol)context.SemanticModel.GetDeclaredSymbol(property, token)!;
+
+            var usages = new List<AttributeUsage>();
+            foreach (var attr in propertySymbol.GetAttributes())
+            {
+                AttributeUsage? newUsage = null;
+                if (MapToAttribute.IsMatch(attr)
+                    || MapToAttribute<object>.IsMatch(attr))
+                {
+                    newUsage = AttributeUsage.To(propertySymbol, attr);
+                }
+                else if (MapFromAttribute.IsMatch(attr)
+                    || MapFromAttribute<object>.IsMatch(attr))
+                {
+                    newUsage = AttributeUsage.From(propertySymbol, attr);
+                }
+                if (newUsage is not null)
+                {
+                    usages.Add(newUsage.Value);
+                }
+            }
+            return [.. usages];
+        }
 
         context.RegisterSourceOutput(compilationAndProperties, (context, source) =>
         {
-            var (compilation, properties) = source;
+            var (compilation, maps) = source;
+            var usages = maps.SelectMany(m => m).ToArray();
 
-            // Find all usages of the MapTo attributes on properties
-            var usages = new List<AttributeUsage>();
-            foreach (var prop in properties)
-            {
-                var model = compilation.GetSemanticModel(prop!.SyntaxTree);
-                var symbol = model.GetDeclaredSymbol(prop);
-                if (symbol is IPropertySymbol propertySymbol)
-                {
-                    foreach (var attr in propertySymbol.GetAttributes())
-                    {
-                        AttributeUsage? newUsage = null;
-                        if ((attr.AttributeClass?.IsGenericType == true
-                            && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapToAttributeGenericFullName)
-                            || attr.AttributeClass?.ToDisplayString() == MapToAttributeFullName)
-                        {
-                            newUsage = AttributeUsage.To(propertySymbol, attr);
-                        }
-                        else if ((attr.AttributeClass?.IsGenericType == true
-                            && attr.AttributeClass.ConstructedFrom?.ToDisplayString() == MapFromAttributeGenericFullName)
-                            || attr.AttributeClass?.ToDisplayString() == MapFromAttributeFullName)
-                        {
-                            newUsage = AttributeUsage.From(propertySymbol, attr);
-                        }
-
-                        if (newUsage is not null)
-                        {
-                            usages.Add(newUsage.Value);
-
-                            // TODO: Warn on duplicate mapping
-                            //context.ReportDuplicatePropertyMapping(propertySymbol, newUsage.Value);
-                        }
-                    }
-                }
-            }
+            // TODO: All warnings and errors should be reported through the context
+            // TODO: Warn on duplicate mapping
+            //context.ReportDuplicatePropertyMapping(propertySymbol, newUsage.Value);
 
             // Generate the AttriMap extension methods
             var sb = new StringBuilder();
@@ -104,9 +103,5 @@ internal class SourceGenerator : IIncrementalGenerator
 
             context.AddSource("AttriMap.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
         });
-
     }
-
-    private static PropertyDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
-        => (PropertyDeclarationSyntax)context.Node;
 }
